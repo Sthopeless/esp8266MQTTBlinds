@@ -16,12 +16,12 @@
 
 
 /************ WIFI and MQTT INFORMATION (CHANGE THESE FOR YOUR SETUP) ******************/
-#define wifi_ssid "<Your SSID>" //enter your WIFI SSID
-#define wifi_password "<Your Password>" //enter your WIFI Password
+#define wifi_ssid "********" //enter your WIFI SSID
+#define wifi_password "************" //enter your WIFI Password
 
-#define mqtt_server "<Your IP>" // Enter your MQTT server adderss or IP. I use my DuckDNS adddress (yourname.duckdns.org) in this field
-#define mqtt_user "<Your User id>" //enter your MQTT username
-#define mqtt_password "<Your Password>" //enter your password
+#define mqtt_server "***.***.*.***" // Enter your MQTT server adderss or IP. I use my DuckDNS adddress (yourname.duckdns.org) in this field
+#define mqtt_user "*******" //enter your MQTT username
+#define mqtt_password "***********" //enter your password
 
 
 
@@ -77,29 +77,29 @@ void callback(char* topic, byte* payload, unsigned int length) {
     p[length] = NULL;
     String message(p);
     String mytopic(topic);
-    if (itsatrap == 0 && mytopic == "<Your Payload Topic>" && message.equals("ON")){  
-      myservo.attach(D4);
+    if (itsatrap == 0 && mytopic == "/blind/bc/command" && message.equals("ON")){  
+      myservo.attach(D3);
       delay(500);
       myservo.write(90); 
-      client.publish("<Your State Topic>", "ON");
+      client.publish("/blind/bc/state", "ON");
       delay(1000);
       myservo.detach();
       }
-    else if (mytopic == "<Your Payload Topic>" && message.equalsIgnoreCase("OFF")){
-      myservo.attach(D4);
+    else if (mytopic == "/blind/bc/command" && message.equalsIgnoreCase("OFF")){
+      myservo.attach(D3);
       delay(500);
       myservo.write(0);  
-      client.publish("<Your State Topic>", "OFF");
+      client.publish("/blind/bc/state", "OFF");
       delay(1000);
       myservo.detach();
     }
-    else if (mytopic == "<Your Brightness Topic>"){
-      myservo.attach(D4);
+    else if (mytopic == "/blind/bc/level"){
+      myservo.attach(D3);
       delay(500);
       val = message.toInt(); //converts command to integer to be used for positional arrangement
       val = map (val, 0, 99, 0, 180);
       myservo.write(val);
-      client.publish("<Your State Topic>", "ON");
+      client.publish("/blind/bc/state", "ON");
       delay(3000);
       myservo.detach();
       itsatrap = 1;
@@ -126,12 +126,12 @@ void reconnect() {
   while (!client.connected()) {
     Serial.print("Attempting MQTT connection...");
     // Attempt to connect
-  if (client.connect("ESPBlindstl", mqtt_user, mqtt_password)) {
+  if (client.connect("ESPBlindstl666", mqtt_user, mqtt_password)) {
       Serial.println("connected");
 
-      client.subscribe("<Your Payload Topic>");
-      client.subscribe("<Your Brightness Topic>");
-      client.publish("<Your State Topic>", "OFF");
+      client.subscribe("/blind/bc/command");
+      client.subscribe("/blind/bc/level");
+      client.publish("/blind/bc/state", "OFF");
     } else {
       Serial.print("failed, rc=");
       Serial.print(client.state());
@@ -142,5 +142,27 @@ void reconnect() {
   }
 }
 
-
-
+/* 
+[In Home Assistant Configuration.yaml]
+light:
+  - platform: mqtt
+    name: "Window Bottom Center"
+    state_topic: "/blind/bc/state"
+    command_topic: "/blind/bc/command"
+    brightness_state_topic: "/blind/bc/state"
+    brightness_command_topic: "/blind/bc/level"
+    brightness_scale: 100
+    qos: 0
+    payload_on: "ON"
+    payload_off: "OFF"
+    optimistic: false
+    retain: true
+    
+    
+    Servo: FS90R from AliExpress
+    
+    Problems: 
+    - ON and OFF rotate the servo the same way
+    - Brightness is not rotating as it should
+    
+    */
